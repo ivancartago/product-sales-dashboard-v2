@@ -403,7 +403,22 @@ function handleProductChange(e) {
 function handleViewChange(e) {
     selectedView = e.target.value;
     
-    // Enable/disable year select based on view
+    // If switching to monthly view and year is set to "All", automatically select the most recent year
+    if (selectedView === "monthly" && selectedYear === "All") {
+        // Get available years (excluding "All")
+        const availableYears = productData[selectedProduct].config.years.filter(y => y !== "All");
+        
+        if (availableYears.length > 0) {
+            // Sort years numerically in descending order and select the most recent
+            const sortedYears = [...availableYears].sort((a, b) => parseInt(b) - parseInt(a));
+            selectedYear = sortedYears[0];
+            
+            // Update the year select element
+            document.getElementById("year-select").value = selectedYear;
+        }
+    }
+    
+    // Enable/disable select elements based on view
     document.getElementById("year-select").disabled = (selectedView === "yearly");
     document.getElementById("platform-select").disabled = (selectedView === "platform");
     
@@ -557,9 +572,19 @@ function updateViewVisibility() {
     } else if (selectedView === "monthly") {
         document.getElementById("monthly-view").classList.remove("hidden");
         
-        // Show/hide monthly message
+        // Only show the "please select a year" message if year is still "All"
         const monthlyMessage = document.getElementById("monthly-message");
         monthlyMessage.classList.toggle("hidden", selectedYear !== "All");
+        
+        // Show the empty data message if we have no data
+        const monthlyData = getMonthlyData(
+            productData[selectedProduct], 
+            selectedYear, 
+            selectedPlatform, 
+            productData[selectedProduct].config.hasEbooks
+        );
+        const hasData = monthlyData.months.length > 0;
+        document.getElementById("monthly-empty-message").classList.toggle("hidden", hasData);
     } else if (selectedView === "platform") {
         document.getElementById("platform-view").classList.remove("hidden");
     }
