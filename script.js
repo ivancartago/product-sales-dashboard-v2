@@ -726,13 +726,12 @@ function getMonthlyData(productData, year, platform, hasEbooks) {
             }
         });
         
-        // Add data for this month if we have any sales
-        if (physicalTotal > 0 || ebookTotal > 0) {
-            months.push(MONTHS[month - 1]);
-            physical.push(physicalTotal);
-            ebook.push(ebookTotal);
-            total.push(physicalTotal + ebookTotal);
-        }
+        // Always add the month, even if there's no data
+        // This ensures we show all months in the chart
+        months.push(MONTHS[month - 1]);
+        physical.push(physicalTotal);
+        ebook.push(ebookTotal);
+        total.push(physicalTotal + ebookTotal);
     }
     
     return { months, physical, ebook, total };
@@ -878,17 +877,17 @@ function updateMonthlyCharts(monthlyData, hasEbooks, productLabel) {
     const ctx1 = document.getElementById('monthly-bar-chart').getContext('2d');
     const ctx2 = document.getElementById('monthly-line-chart').getContext('2d');
     
-    // Check if we have data
-    const hasData = monthlyData.months.length > 0;
+    // Check if we have any data (sum of all values > 0)
+    const hasAnyData = monthlyData.total.reduce((sum, val) => sum + val, 0) > 0;
     
     // Show/hide empty message
-    document.getElementById("monthly-empty-message").classList.toggle("hidden", hasData);
+    document.getElementById("monthly-empty-message").classList.toggle("hidden", hasAnyData);
     
     // Destroy existing charts
     if (monthlyBarChart) monthlyBarChart.destroy();
     if (monthlyLineChart) monthlyLineChart.destroy();
     
-    if (!hasData) return;
+    if (!hasAnyData) return;
     
     // Create bar chart
     monthlyBarChart = new Chart(ctx1, {
@@ -1025,6 +1024,16 @@ function updatePieChart(pieChartData) {
     
     // Prepare data
     const hasEbookData = pieChartData.ebookData && pieChartData.ebookData.length > 0;
+    const totalValues = hasEbookData 
+        ? pieChartData.physicalData.map((physical, i) => physical + pieChartData.ebookData[i])
+        : pieChartData.physicalData;
+    
+    // Calculate percentages and add to labels
+    const totalSum = totalValues.reduce((sum, value) => sum + value, 0);
+    const percentages = totalValues.map(value => ((value / totalSum) * 100).toFixed(0));
+    const labelsWithPercentages = pieChartData.labels.map((label, i) => 
+        `${label}: ${percentages[i]}%`
+    );
     
     // Destroy existing chart
     if (pieChart) pieChart.destroy();
@@ -1033,11 +1042,11 @@ function updatePieChart(pieChartData) {
     pieChart = new Chart(ctx, {
         type: 'pie',
         data: {
-            labels: pieChartData.labels,
+            labels: labelsWithPercentages,
             datasets: hasEbookData ? [
                 {
                     label: 'Sales Distribution',
-                    data: pieChartData.physicalData.map((physical, i) => physical + pieChartData.ebookData[i]),
+                    data: totalValues,
                     backgroundColor: COLORS,
                     borderColor: '#fff',
                     borderWidth: 1
@@ -1045,7 +1054,7 @@ function updatePieChart(pieChartData) {
             ] : [
                 {
                     label: 'Sales Distribution',
-                    data: pieChartData.physicalData,
+                    data: totalValues,
                     backgroundColor: COLORS,
                     borderColor: '#fff',
                     borderWidth: 1
@@ -1054,7 +1063,19 @@ function updatePieChart(pieChartData) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const percentage = ((value / totalSum) * 100).toFixed(1);
+                            return `${label.split(':')[0]}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
         }
     });
 }
