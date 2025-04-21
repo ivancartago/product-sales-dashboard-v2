@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Sales Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2 class="dashboard-title">Product Sales Dashboard</h2>
+        
+        <!-- Loading indicator -->
+        <div id="loading-indicator" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Loading data from Google Sheets...</p>
+        </div>
+        
+        <!-- Error message -->
+        <div id="error-message" class="error-message hidden"></div>
+        
+        <!-- Refresh indicator -->
+        <div id="refresh-indicator" class="refresh-indicator hidden">
+            <span>✓</span> Data refreshed successfully
+        </div>
+        
+        <div class="control-panel">
+            <div class="product-selector">
+                <label class="font-semibold">Select Product:</label>
+                <select id="product-select" class="select-input">
+                    <!-- Product options will be filled via JavaScript -->
+                </select>
+                <button id="refresh-button" class="refresh-button" title="Refresh data from Google Sheets">
+                    ↻ Refresh
+                </button>
+            </div>
+            <div class="sheet-info">
+                <small>Data automatically syncs from Google Sheets every 5 minutes</small>
+            </div>
+        </div>
+        
+        <div class="filter-container">
+            <div class="filter-item">
+                <label class="filter-label">View</label>
+                <select id="view-select" class="select-input">
+                    <option value="yearly">By Year</option>
+                    <option value="monthly">By Month</option>
+                    <option value="platform">By Platform</option>
+                </select>
+            </div>
+            
+            <div class="filter-item">
+                <label class="filter-label">Year</label>
+                <select id="year-select" class="select-input">
+                    <!-- Year options will be filled via JavaScript -->
+                </select>
+            </div>
+            
+            <div class="filter-item">
+                <label class="filter-label">Platform</label>
+                <select id="platform-select" class="select-input">
+                    <!-- Platform options will be filled via JavaScript -->
+                </select>
+            </div>
+        </div>
+        
+        <!-- Alert container -->
+        <div id="alert-container" class="alert-container hidden"></div>
+        
+        <div class="dashboard-grid">
+            <div class="chart-column">
+                <!-- Yearly view charts -->
+                <div id="yearly-view" class="chart-container">
+                    <h3 class="chart-title">Sales by Year</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="yearly-bar-chart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper mt-large">
+                        <h3 class="chart-title">Sales Trend by Year</h3>
+                        <canvas id="yearly-line-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Monthly view charts -->
+                <div id="monthly-view" class="chart-container hidden">
+                    <h3 class="chart-title">Monthly Sales</h3>
+                    <div id="monthly-message" class="message hidden">Please select a specific year to see monthly data.</div>
+                    <div id="monthly-empty-message" class="message hidden">No monthly data available for the selected combination.</div>
+                    <div class="chart-wrapper">
+                        <canvas id="monthly-bar-chart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper mt-large">
+                        <h3 class="chart-title">Monthly Sales Trend</h3>
+                        <canvas id="monthly-line-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Platform view charts -->
+                <div id="platform-view" class="chart-container hidden">
+                    <h3 class="chart-title">Sales by Platform</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="platform-bar-chart"></canvas>
+                    </div>
+                    
+                    <div class="chart-wrapper mt-large">
+                        <h3 class="chart-title">Total Sales by Platform</h3>
+                        <canvas id="platform-total-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-column">
+                <h3 class="chart-title">Platform Sales Distribution</h3>
+                <div class="chart-wrapper">
+                    <canvas id="pie-chart"></canvas>
+                </div>
+                
+                <div class="mt-large">
+                    <h3 class="chart-title">Data Summary</h3>
+                    <div class="table-wrapper">
+                        <table id="summary-table" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th id="physical-header">Physical</th>
+                                    <th id="ebook-header" class="ebook-column">eBooks</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summary-table-body">
+                                <!-- Table data will be filled via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes section -->
+        <div id="notes-container" class="notes-container hidden">
+            <h3 class="section-title">Notes</h3>
+            <ol id="notes-list" class="notes-list">
+                <!-- Notes will be filled via JavaScript -->
+            </ol>
+        </div>
+        
+        <!-- Forecast Method Explanation -->
+        <div id="forecast-container" class="forecast-container hidden">
+            <h3 class="section-title">Forecast Methodology</h3>
+            <div id="forecast-content"></div>
+        </div>
+        
+        <!-- Product comparison section -->
+        <div class="comparison-container">
+            <h3 class="section-title">Cross-Product Analysis</h3>
+            <p>Use the product selector at the top to switch between products and compare their sales performance.</p>
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h4 id="current-product-title" class="card-title">Current Product: Cookbook</h4>
+                    <p id="current-product-sales">Total sales in 2025 (Q1): N/A</p>
+                    <p id="current-product-platform">Top platform: N/A</p>
+                    <p id="current-product-ratio">Physical to Digital ratio: N/A</p>
+                </div>
+                <div class="comparison-card">
+                    <h4 class="card-title">Product Insights</h4>
+                    <ul id="product-insights" class="insights-list">
+                        <!-- Insights will be filled via JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data source footer -->
+        <div class="footer">
+            <p>Data source: Google Sheets | Last updated: <span id="last-updated">Loading...</span></p>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
